@@ -76,5 +76,37 @@ https://hub.docker.com/r/jasonrivers/nagios
 ```bash
 docker run --name nagios4 -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
 ```
+
+```bash
+docker run --name nagios4  \
+  -v $PWD/nagios/nagios/etc/:/opt/nagios/etc/ \
+  -v $PWD/nagios/nagios/var:/opt/nagios/var/ \
+  -v $PWD/nagios/Custom-Nagios-Plugins:/opt/Custom-Nagios-Plugins \
+  -v $PWD/nagios/nagiosgraph/var:/opt/nagiosgraph/var \
+  -v $PWD/nagios/nagiosgraph/etc:/opt/nagiosgraph/etc \
+  -p 0.0.0.0:8080:80 jasonrivers/nagios:latest
+```
+
 username: nagiosadmin
 password: nagios
+
+### Collectd-nagios
+https://www.collectd.org/documentation/manpages/collectd-nagios.html
+
+
+```bash
+sudo apt -y install --no-install-recommends collectd-utils  
+```
+
+```bash
+sudo apt update && sudo apt install socat -y
+```
+
+récupérer les variables:
+```bash
+echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock  
+```
+
+```bash
+/usr/bin/collectd-nagios -s /tmp/collectd-unixsock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
+```

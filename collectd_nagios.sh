@@ -45,7 +45,7 @@ if pgrep -x "collectd" > /dev/null; then
 fi
 
 # Vérifier si les plugins nécessaires sont installés
-PLUGINS=("cpu" "memory" "interface" "df" "network" "write_log" "unixsock")
+PLUGINS=("cpu" "memory" "interface" "df" "network" "unixsock" "write_log")
 for plugin in "${PLUGINS[@]}"; do
     if ! ls /usr/lib/collectd/ | grep -q "$plugin.so"; then
         echo "⚠️  Le plugin $plugin est manquant. Installation en cours..."
@@ -55,6 +55,15 @@ for plugin in "${PLUGINS[@]}"; do
 done
 
 mkdir -p ./config
+
+unix_socket=/tmp/collectd-unixsock
+
+if ! getent group collectd; then
+  sudo groupadd collectd
+  sudo usermod -aG collectd $(whoami)
+  echo redémarer le terminal avant de relancer le script
+  exit 1
+fi
 
 # Nettoyage des fichiers temporaires
 rm -f $collectd_conf
@@ -69,6 +78,7 @@ LoadPlugin memory
 LoadPlugin interface
 LoadPlugin df
 LoadPlugin unixsock
+LoadPlugin write_log
 
 <Plugin "cpu">
   ReportByCpu false
@@ -89,7 +99,7 @@ LoadPlugin unixsock
 </Plugin>
 
 <Plugin "unixsock">
-  SocketFile "/var/run/collectd-unixsock"
+  SocketFile "$unix_socket"
   SocketGroup "nagios"
   SocketPerms "0660"
 </Plugin>
