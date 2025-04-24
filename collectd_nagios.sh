@@ -67,6 +67,7 @@ fi
 
 # Nettoyage des fichiers temporaires
 rm -f $collectd_conf
+rm -f $unix_socket
 
 # Création du fichier de configuration temporaire pour Collectd
 cat > $collectd_conf <<EOL
@@ -95,13 +96,14 @@ LoadPlugin write_log
 </Plugin>
 
 <Plugin df>
+  Device "/dev/nvme0n1p5"
   ValuesPercentage true
 </Plugin>
 
 <Plugin "unixsock">
   SocketFile "$unix_socket"
-  SocketGroup "nagios"
-  SocketPerms "0660"
+  SocketGroup "root"
+  SocketPerms "0777"
 </Plugin>
 EOL
 

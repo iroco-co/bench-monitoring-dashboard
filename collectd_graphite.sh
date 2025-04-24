@@ -69,6 +69,7 @@ Interval $TIME_INTERVAL
 LoadPlugin cpu
 LoadPlugin memory
 LoadPlugin interface
+LoadPlugin df
 LoadPlugin write_graphite
 LoadPlugin write_log
 
@@ -86,8 +87,8 @@ LoadPlugin write_log
   IgnoreSelected false
 </Plugin>
 
-LoadPlugin df
 <Plugin df>
+  Device "/dev/nvme0n1p5"
   ValuesPercentage true
 </Plugin>
 
