@@ -25,7 +25,8 @@ docker run -d \
  -p 8126:8126 \
  graphiteapp/graphite-statsd
 ```
-
+username: root
+password: root
 # Zabbix web service
 
 ## Installation
@@ -79,12 +80,12 @@ docker run --name nagios4 -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
 
 ```bash
 docker run --name nagios4  \
+  -v /tmp/collectd-unixsock:/opt/collectd/var/run/collectd-unixsock \
   -v $PWD/nagios/nagios/etc/:/opt/nagios/etc/ \
-  -v $PWD/nagios/nagios/var:/opt/nagios/var/ \
   -v $PWD/nagios/Custom-Nagios-Plugins:/opt/Custom-Nagios-Plugins \
   -v $PWD/nagios/nagiosgraph/var:/opt/nagiosgraph/var \
   -v $PWD/nagios/nagiosgraph/etc:/opt/nagiosgraph/etc \
-  -p 0.0.0.0:8080:80 jasonrivers/nagios:latest
+  -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
 ```
 
 username: nagiosadmin
@@ -110,3 +111,28 @@ echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock
 ```bash
 /usr/bin/collectd-nagios -s /tmp/collectd-unixsock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
 ```
+
+nagios/etc/commands.cfg
+```conf
+define command{
+        command_name    check_collectd
+        command_line    /usr/bin/collectd-nagios -s /opt/collectd/var/run/collectd-unixsock -n cpu/percent-idle -H arthurb-Latitude-7490 -g none
+        }
+```
+nagios/etc/localhost.cfg
+```conf
+define service{
+        use                             local-service,graphed-service          ; Name of service template to use
+        host_name                       localhost
+        service_description             Collectd Load
+        check_command                   check_collectd
+        check_interval                 1
+        }
+```
+Donc en gros comment ça fonctionne?
+1. collectd ouvre une socket unix avec le plugin. 
+2. Le service Nagios execute la commande qui utilise l'utilistaire collectd-nagios (il faut insaller collectd-nagios sur le docker nagios).
+3. collectd-nagios se connecte à la socket unix et demande la valeur de la métrique passée en paramettre de la commande.
+4. collectd-nagios renvoie la valeur à nagios qui l'affiche dans l'interface web.
+
+
