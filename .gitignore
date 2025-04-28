@@ -1,4 +1,9 @@
 /config
-/nagios/nagiosgraph
-/nagios/nagios/etc/*[!objects]
-/nagios/nagios/etc/htpasswd.users
+
+/nagios/nagiosgraph/*
+!/nagios/nagiosgraph/etc/
+/nagios/nagiosgraph/etc/*
+!/nagios/nagiosgraph/etc/nagiosgraph.conf
+
+/nagios/nagios/etc/*
+!/nagios/nagios/etc/objects
