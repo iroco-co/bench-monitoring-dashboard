@@ -19,7 +19,6 @@ for METRIC in $METRICS; do
   # 1) Appel unique du plugin par état
   output="$($PLUGIN -s "$SOCK" -n $METRIC -H "$HOST" -g none)"
   code=$?
-  echo "DEBUG: $METRIC $output, code=$code"
   # 2) Mappage du code de sortie (>3 → 3)
   (( code > 3 )) && code=3
   # 3) Agrégation du code le plus sévère
