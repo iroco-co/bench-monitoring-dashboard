@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Initialisation des variables
-TIME_INTERVAL=10                     # Intervalle de temps pour la collecte des métriques (en secondes)
+TIME_INTERVAL=1                     # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="localhost"      # Adresse IP ou nom DNS du serveur Collectd
 NETWORK_INTERFACE="wlp2s0"          # Interface réseau à surveiller
 CONFIG_DIR="./config"               # Répertoire de configuration
@@ -108,10 +108,6 @@ LoadPlugin write_log
 # </Plugin>
 EOL
 
+timeout 1 collectd -C $CONFIG_DIR/collectd.conf -f > /dev/null 2>&1
 echo "✅ Configuration Collectd générée :"
 cat $collectd_conf
-
-# Démarrage de Collectd en arrière-plan avec gestion du PID
-echo "🚀 Démarrage de Collectd"
-collectd -C $collectd_conf -f
-echo "Collectd démarré avec succès !"
