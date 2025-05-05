@@ -4,6 +4,11 @@
 !/nagios/nagiosgraph/etc/
 /nagios/nagiosgraph/etc/*
 !/nagios/nagiosgraph/etc/nagiosgraph.conf
-
 /nagios/nagios/etc/*
 !/nagios/nagios/etc/objects
+
+/graphite/conf/*
+/graphite/storage/*
+!/graphite/storage/graphite.db
+
+/tir*/

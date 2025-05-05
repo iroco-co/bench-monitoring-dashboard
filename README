@@ -18,6 +18,8 @@ https://github.com/graphite-project/docker-graphite-statsd
 docker run -d \
  --name graphite \
  --restart=always \
+ -v $PWD/graphite/storage:/opt/graphite/storage \
+ -v $PWD/graphite/conf:/opt/graphite/conf \
  -p 80:80 \
  -p 2003-2004:2003-2004 \
  -p 2023-2024:2023-2024 \
@@ -107,7 +109,9 @@ récupérer les variables:
 ```bash
 echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock  
 ```
-
+```bash
+echo "LISTVAL" | socat - UNIX-CONNECT:/opt/collectd/var/run/collectd-unixsock
+```
 ```bash
 /usr/bin/collectd-nagios -s /tmp/collectd-unixsock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
 ```
