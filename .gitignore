@@ -11,4 +11,8 @@
 /graphite/storage/*
 !/graphite/storage/graphite.db
 
+/grafana/conf/*
+/grafana/data/*
+!/grafana/data/grafana.db
+
 /tir*/

@@ -5,7 +5,6 @@ BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s) # Date de base pour la collecte d
 # Initialisation des variables
 DURATION=10 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
 STEP=1 # sec                            # Pas de temps pour la collecte de données
-DESTINATION=$PWD/tir_${DURATION}sec     # Répertoire de destination du tir de benchmark
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
 
@@ -13,6 +12,8 @@ NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
 if [ -n "$1" ]; then
   DURATION=$1
 fi
+DESTINATION=$PWD/tir_${DURATION}sec     # Répertoire de destination du tir de benchmark
+
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec
@@ -68,6 +69,13 @@ start_graphite() {
   docker start graphite
 }
 
+start_grafana() {
+  start_collectd
+  sleep 1
+  echo "Démarage grafana..."
+  docker start grafana
+}
+
 start_nagios() {
   start_collectd
   sleep 1
@@ -82,6 +90,15 @@ stop_graphite() {
   fi
   stop_collectd
   echo "Arrêt de Graphite..."
+}
+
+stop_grafana() {
+  if docker ps -q --filter "name=grafana" > /dev/null; then
+    echo "Arrêt de grafana..."
+    docker stop grafana
+  fi
+  stop_collectd
+  echo "Arrêt de grafana..."
 }
 
 stop_nagios() {
@@ -116,6 +133,20 @@ bench_graphite() {
   echo "Benchmark Graphite terminé."
 }
 
+bench_grafana() {
+  config_collectd_graphite
+  echo "Benchmark grafana en cours..."
+  start_collect_data grafana
+  sleep $TIME_BEFORE
+  start_grafana
+  start_graphite
+  sleep $DURATION
+  stop_grafana
+  stop_graphite
+  sleep $TIME_AFTER
+  echo "Benchmark grafana terminé."
+}
+
 # Lancer un benchmark Nagios
 bench_nagios() {
   config_collectd_nagios
@@ -145,10 +176,10 @@ create_dir
 stop_collectd
 stop_graphite
 stop_nagios
+stop_grafana
 
 bench_graphite
-bench_nagios
-bench_empty
+bench_grafana
 
 sleep 1
 generate_graphs
