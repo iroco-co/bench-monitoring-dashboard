@@ -5,7 +5,7 @@ services:
     container_name: graphite
     image: graphiteapp/graphite-statsd
     ports:
-      - "80:80"
+      - "81:80"
       - "2003-2004:2003-2004"
       - "2023-2024:2023-2024"
     restart: always

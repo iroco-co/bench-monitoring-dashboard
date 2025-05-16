@@ -59,7 +59,7 @@ stop_collectd() {
 
 start_collectd() {
   echo "Démarage Collectd pour $DURATION secondes"
-  collectd -C $CONFIG_DIR/collectd.conf -f > /dev/null 2>&1 &
+  collectd -C $CONFIG_DIR/collectd_$1.conf -f > /dev/null 2>&1 &
 }
 
 start_graphite() {
@@ -70,14 +70,14 @@ start_graphite() {
 }
 
 start_grafana() {
-  start_collectd
+  start_collectd graphite
   sleep 1
   echo "Démarage grafana..."
   docker start grafana
 }
 
 start_nagios() {
-  start_collectd
+  start_collectd nagios
   sleep 1
   echo "Démarage Nagios..."
   docker start nagios4
@@ -178,7 +178,7 @@ stop_graphite
 stop_nagios
 stop_grafana
 
-bench_graphite
+# bench_graphite
 bench_grafana
 
 sleep 1
