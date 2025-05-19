@@ -81,6 +81,13 @@ docker run --name nagios4 -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
 ```
 
 ```bash
+  sudo rm -rf $PWD/nagios/nagios/etc/*
+  sudo rm -rf $PWD/nagios/Custom-Nagios-Plugins/*
+  sudo rm -rf $PWD/nagios/nagiosgraph/var/*
+  sudo rm -rf $PWD/nagios/nagiosgraph/etc/*
+```
+
+```bash
 docker run --name nagios4  \
   -v /tmp/collectd-unixsock:/opt/collectd/var/run/collectd-unixsock \
   -v $PWD/nagios/nagios/etc/:/opt/nagios/etc/ \
@@ -103,6 +110,11 @@ sudo apt -y install --no-install-recommends collectd-utils
 
 ```bash
 sudo apt update && sudo apt install socat -y
+```
+
+```bash
+docker start nagios4
+docker exec -it nagios4 sh
 ```
 
 récupérer les variables:
@@ -139,4 +151,34 @@ Donc en gros comment ça fonctionne?
 3. collectd-nagios se connecte à la socket unix et demande la valeur de la métrique passée en paramettre de la commande.
 4. collectd-nagios renvoie la valeur à nagios qui l'affiche dans l'interface web.
 
+# Purges:
 
+## Graphite
+```bash
+docker stop graphite 
+sudo rm -rf $PWD/graphite/storage/whisper/*
+```
+
+## Zabbix
+```bash
+docker start zabbix-docker-mysql-server-1
+docker exec -it zabbix-docker-mysql-server-1 sh
+mysql -u zabbix -pzabbix
+```
+```sql
+CONNECT zabbix;
+TRUNCATE TABLE history;
+TRUNCATE TABLE history_log;
+TRUNCATE TABLE history_str;
+TRUNCATE TABLE history_uint;
+TRUNCATE TABLE history_text;
+TRUNCATE TABLE trends;
+TRUNCATE TABLE trends_uint;
+
+```
+
+## Nagios
+```bash
+docker stop nagios4
+sudo rm -rf $PWD/nagios/nagiosgraph/var/*
+```

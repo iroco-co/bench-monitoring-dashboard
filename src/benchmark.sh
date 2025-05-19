@@ -7,18 +7,24 @@ DURATION=10 # sec                       # Echantillon de temps pour l'utilisatio
 STEP=1 # sec                            # Pas de temps pour la collecte de données
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
-
+BENCHED_TOOLS="zabbix grafana nagios" # Liste des outils de monitoring à benchmarker
 # Analyse des options de ligne de commande
 if [ -n "$1" ]; then
   DURATION=$1
 fi
-DESTINATION=$PWD/tir_${DURATION}sec     # Répertoire de destination du tir de benchmark
-
 
 TIME_BEFORE=5 # sec
 TIME_AFTER=5 # sec
 
 nb_sec_collect=$(($DURATION + $TIME_BEFORE + $TIME_AFTER))
+nb_total_sec=$nb_sec_collect
+
+DESTINATION=$PWD/tir_     # Répertoire de destination du tir de benchmark
+for tool in $BENCHED_TOOLS; do
+  DESTINATION="${DESTINATION}_${tool}"
+  nb_total_sec=$(($nb_total_sec + $nb_sec_collect))
+done
+DESTINATION="${DESTINATION}_${DURATION}sec_$(date +%Y-%m-%d_%H-%M-%S)"
 
 cleanup() {
   rm -rf ${DESTINATION}
@@ -27,12 +33,22 @@ cleanup() {
 
 config_collectd_graphite() {
   echo "Configuration de Collectd pour Graphite..."
-  /bin/bash src/collectd_graphite.sh > /dev/null #2>&1 &
+  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+}
+
+config_collectd_grafana() {
+  echo "Configuration de Collectd pour Graphana..."
+  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
 }
 
 config_collectd_nagios() {
   echo "Configuration de Collectd pour Nagios..."
-  sudo /bin/bash src/collectd_nagios.sh > /dev/null #2>&1 &
+  sudo /bin/bash src/collectd_nagios.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+}
+
+config_collectd_zabbix() {
+  echo "Configuration de Collectd pour Zabbix..."
+  sudo /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
 }
 
 # Création du répertoire de destination du tir
@@ -52,13 +68,13 @@ create_dir() {
 stop_collectd() {
   if pgrep -x "collectd" > /dev/null; then
     echo "Une instance de Collectd tourne déjà. Arrêt en cours..."
-    kill $(pgrep -x "collectd")
+    sudo kill $(pgrep -x "collectd")
     echo "Arrêt de Collectd"
   fi
 }
 
 start_collectd() {
-  echo "Démarage Collectd pour $DURATION secondes"
+  echo "Démarage Collectd $1 pour $DURATION secondes"
   collectd -C $CONFIG_DIR/collectd_$1.conf -f > /dev/null 2>&1 &
 }
 
@@ -73,7 +89,7 @@ start_grafana() {
   start_collectd graphite
   sleep 1
   echo "Démarage grafana..."
-  docker start grafana
+  docker compose --project-name 'bench-monitoring-dashboard' start
 }
 
 start_nagios() {
@@ -81,6 +97,13 @@ start_nagios() {
   sleep 1
   echo "Démarage Nagios..."
   docker start nagios4
+}
+
+start_zabbix() {
+  start_collectd zabbix
+  sleep 1
+  echo "Démarage Zabbix..."
+  docker compose --project-name 'zabbix-docker' start 
 }
 
 stop_graphite() {
@@ -93,10 +116,7 @@ stop_graphite() {
 }
 
 stop_grafana() {
-  if docker ps -q --filter "name=grafana" > /dev/null; then
-    echo "Arrêt de grafana..."
-    docker stop grafana
-  fi
+  docker compose --project-name 'bench-monitoring-dashboard' stop
   stop_collectd
   echo "Arrêt de grafana..."
 }
@@ -110,6 +130,12 @@ stop_nagios() {
   echo "Arrêt de Nagios..."
 }
 
+stop_zabbix() {
+  docker compose --project-name 'zabbix-docker' stop
+  stop_collectd
+  echo "Arrêt de zabbix..."
+}
+
 start_collect_data() {
   echo "Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
   exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect --step $STEP $DESTINATION/$1 > /dev/null 2>&1 &
@@ -118,46 +144,6 @@ start_collect_data() {
 generate_graphs() {
   echo "Generation des graphiques..."
   /bin/bash src/agregate_graph.sh $DESTINATION > /dev/null #2>&1
-}
-
-# Lancer un benchmark Graphite
-bench_graphite() {
-  config_collectd_graphite
-  echo "Benchmark Graphite en cours..."
-  start_collect_data graphite
-  sleep $TIME_BEFORE
-  start_graphite
-  sleep $DURATION
-  stop_graphite
-  sleep $TIME_AFTER
-  echo "Benchmark Graphite terminé."
-}
-
-bench_grafana() {
-  config_collectd_graphite
-  echo "Benchmark grafana en cours..."
-  start_collect_data grafana
-  sleep $TIME_BEFORE
-  start_grafana
-  start_graphite
-  sleep $DURATION
-  stop_grafana
-  stop_graphite
-  sleep $TIME_AFTER
-  echo "Benchmark grafana terminé."
-}
-
-# Lancer un benchmark Nagios
-bench_nagios() {
-  config_collectd_nagios
-  echo "Benchmark Nagios en cours..."
-  start_collect_data nagios
-  sleep $TIME_BEFORE
-  start_nagios
-  sleep $DURATION
-  stop_nagios
-  sleep $TIME_AFTER
-  echo "Benchmark Collectd terminé."
 }
 
 # Lancer un benchmark à vide
@@ -170,16 +156,40 @@ bench_empty() {
   echo "Benchmark à vide terminé."
 }
 
-# Main
-create_dir
+bench_tool() {
+  echo "Benchmark $1 en cours..."
+  start_collect_data $1
+  sleep $TIME_BEFORE
+  "start_$1"
+  sleep $DURATION
+  "stop_$1"
+  sleep $TIME_AFTER
+  echo "Benchmark $1 terminé."
+}
 
+# Main
 stop_collectd
+stop_grafana
 stop_graphite
 stop_nagios
-stop_grafana
+stop_zabbix
 
-# bench_graphite
-bench_grafana
+cleanup
+
+
+create_dir
+
+for tool in $BENCHED_TOOLS; do
+  "config_collectd_$tool"
+done
+
+echo "Démarrage du benchmark pour $nb_total_sec seconds..."
+
+for tool in $BENCHED_TOOLS; do
+  bench_tool $tool 2>&1 &
+done
+
+bench_empty
 
 sleep 1
 generate_graphs
