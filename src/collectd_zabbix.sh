@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Initialisation des variables
-TIME_INTERVAL=5                   # Intervalle de temps pour la collecte des métriques (en secondes)
+TIME_INTERVAL=1                   # Intervalle de temps pour la collecte des métriques (en secondes)
 DESTINATION_SERVER="localhost"      # Adresse IP ou nom DNS du serveur Zabbix
 NETWORK_INTERFACE="wlp2s0"          # Interface réseau à surveiller
 CONFIG_DIR="$PWD/config"               # Répertoire de configuration
