@@ -10,6 +10,7 @@ nagios/nagios/etc/send_nsca.cfg
 /graphite/conf/*
 /graphite/storage/*
 !/graphite/storage/graphite.db
+!/graphite/conf/storage-schemas.conf
 
 /grafana/conf/*
 /grafana/data/*
