@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Constantes
-UNIX_SOCKET=/tmp/collectd-unixsock
+UNIX_SOCKET=/tmp/collectd-unixsock.sock
 
 # Initialisation des variables
 TIME_INTERVAL=1                     # Intervalle de temps pour la collecte des métriques (en secondes)

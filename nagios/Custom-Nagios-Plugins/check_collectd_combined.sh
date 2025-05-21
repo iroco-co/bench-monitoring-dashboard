@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SOCK="/opt/collectd/var/run/collectd-unixsock"
+SOCK="/opt/collectd/var/run/collectd-unixsock.sock"
 HOST="arthurb-Latitude-7490"
 PLUGIN="/usr/bin/collectd-nagios"
 

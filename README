@@ -89,7 +89,7 @@ docker run --name nagios4 -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
 
 ```bash
 docker run --name nagios4  \
-  -v /tmp/collectd-unixsock:/opt/collectd/var/run/collectd-unixsock \
+  -v /tmp/collectd-unixsock.sock:/opt/collectd/var/run/collectd-unixsock.sock \
   -v $PWD/nagios/nagios/etc/:/opt/nagios/etc/ \
   -v $PWD/nagios/Custom-Nagios-Plugins:/opt/Custom-Nagios-Plugins \
   -v $PWD/nagios/nagiosgraph/var:/opt/nagiosgraph/var \
@@ -119,20 +119,20 @@ docker exec -it nagios4 sh
 
 récupérer les variables:
 ```bash
-echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock  
+echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock.sock  
 ```
 ```bash
-echo "LISTVAL" | socat - UNIX-CONNECT:/opt/collectd/var/run/collectd-unixsock
+echo "LISTVAL" | socat - UNIX-CONNECT:/opt/collectd/var/run/collectd-unixsock.sock
 ```
 ```bash
-/usr/bin/collectd-nagios -s /tmp/collectd-unixsock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
+/usr/bin/collectd-nagios -s /tmp/collectd-unixsock.sock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
 ```
 
 nagios/etc/commands.cfg
 ```conf
 define command{
         command_name    check_collectd
-        command_line    /usr/bin/collectd-nagios -s /opt/collectd/var/run/collectd-unixsock -n cpu/percent-idle -H arthurb-Latitude-7490 -g none
+        command_line    /usr/bin/collectd-nagios -s /opt/collectd/var/run/collectd-unixsock.sock -n cpu/percent-idle -H arthurb-Latitude-7490 -g none
         }
 ```
 nagios/etc/localhost.cfg
