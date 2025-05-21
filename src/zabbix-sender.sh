@@ -4,32 +4,59 @@
 # -----------------------------------------------------------------------------
 
 # --- Variables ---
-LOGFILE="$1"
+UNIX_SOCKET="$1"
 DESTINATION_SERVER="$2"
 DESTINATION_PORT="$3"
 ZBX_SERVER="$DESTINATION_SERVER:$DESTINATION_PORT"
 
-log_file="/home/arthurb/envs/iroco/src/bench-monitoring-dashboard/config/collectd_zabbix2.log"
-# Vérifier que le fichier existe et n'est pas vide
-[ -s "$LOGFILE" ] || exit 0
-# Parcours ligne par ligne
-while IFS= read -r line; do
+# --- Fonction d'envoi de métriques à Zabbix ---
+send_to_zabbix() {
+  local host="$1"
+  local key="$2"
+  local ts="$3"
+  local value="$4"
 
-  # Vérifier si la ligne est vide
-  [ -z "$line" ] && continue
-  # Vérifier si la ligne commence par un caractère de commentaire
-  [[ "$line" =~ ^#.* ]] && continue
-  # Vérifier que la ligne ne commence pas par [
-  [[ "$line" =~ ^\[.* ]] && continue
-  line="${line//$'\r'/}"
-  read -r item value ts <<<"$line" 
-  host="${item%%.*}" # Récupérer le nom d'hôte
-  key="${item#*.}" # Récupérer la clé de la métrique
-  echo "$host $key $ts $value" | \
+  # Envoi de la métrique à Zabbix
+  echo "$host  $key $ts $value" | \
   zabbix_sender -z "$ZBX_SERVER" -T -i - \
       >> /dev/null 2>&1
+}
 
-done < "$LOGFILE"
+send_value_from_key() {
+  local host="$1"
+  local key="$2"
+  local ts="$3"
+  local value="$4"
+  
+  local nb_values=$(echo "$values" | sed -n '1p' | awk '{print $1}')
 
-# Vider le fichier pour la prochaine itération
-: > "$LOGFILE"
+  if [ "$nb_values" -eq 1 ]; then
+    value=$(echo "$values" | sed -n '2p' | cut -d'=' -f2)
+    send_to_zabbix "$host" "$key" "$ts" "$value"
+  else
+    for i in $(seq 2 $(($nb_values + 1))); do
+      value=$(echo "$values" | sed -n "${i}p" | cut -d'=' -f2)
+      new_key=${key}.$(echo "$values" | sed -n "${i}p" | cut -d'=' -f1)
+      send_to_zabbix "$host" "$new_key" "$ts" "$value"
+    done
+  fi
+}
+
+# --- Lecture du socket unix collectd et envoi des métriques ---
+
+listval=$(echo "LISTVAL" | socat - UNIX-CONNECT:$UNIX_SOCKET)
+# supprimer la première ligne
+listval=$(echo "$listval" | sed '1d')
+while read -r line; do
+  # Extraction des valeurs
+  ts=$(echo "$line" | awk '{print $1}' | cut -d'.' -f1)
+  item=$(echo "$line" | awk '{print $2}')
+  host=$(echo "$item" | cut -d'/' -f1)
+  key=$(echo "$item" | cut -d'/' -f2- | tr '/' .)
+  values=$(echo GETVAL "$item" | socat - UNIX-CONNECT:$UNIX_SOCKET)
+
+  send_value_from_key "$host" "$key" "$ts" "$values" &
+
+  # Envoi de la métrique à Zabbix
+done <<< "$listval"
+

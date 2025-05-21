@@ -27,10 +27,10 @@ done
 
 # Chemins de configuration et logs
 collectd_conf="$CONFIG_DIR/collectd_zabbix.conf"
-log_file="$CONFIG_DIR/collectd_zabbix.log"
+UNIX_SOCKET="/tmp/collectd-zabbix-unixsock.sock"
 
 mkdir -p $CONFIG_DIR
-touch $log_file
+rm -f $UNIX_SOCKET
 
 rm -f $collectd_conf
 
@@ -56,8 +56,8 @@ LoadPlugin cpu
 LoadPlugin memory
 LoadPlugin interface
 LoadPlugin df
+LoadPlugin unixsock
 LoadPlugin exec
-LoadPlugin logfile
 LoadPlugin write_log
 
 <Plugin "cpu">
@@ -79,14 +79,14 @@ LoadPlugin write_log
   ValuesPercentage true
 </Plugin>
 
-<Plugin "logfile">
-  LogLevel "info"
-  File "$log_file"
+<Plugin "unixsock">
+  SocketFile "$UNIX_SOCKET"
+  SocketGroup "root"
+  SocketPerms "0777"
 </Plugin>
 
-LoadPlugin exec
 <Plugin exec>
-  Exec "arthurb:arthurb" "$PWD/src/zabbix-sender.sh" "$log_file" "$DESTINATION_SERVER" "$DESTINATION_PORT"
+  Exec "arthurb:arthurb" "$PWD/src/zabbix-sender.sh" "$UNIX_SOCKET" "$DESTINATION_SERVER" "$DESTINATION_PORT"
 </Plugin>
 EOL
 
