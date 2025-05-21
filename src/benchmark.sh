@@ -5,6 +5,7 @@ BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s) # Date de base pour la collecte d
 # Initialisation des variables
 DURATION=10 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
 STEP=1 # sec                            # Pas de temps pour la collecte de données
+INTERVAL=1 # sec                        # Intervalle de temps pour la config de collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
 BENCHED_TOOLS="zabbix grafana nagios" # Liste des outils de monitoring à benchmarker
@@ -33,22 +34,22 @@ cleanup() {
 
 config_collectd_graphite() {
   echo "Configuration de Collectd pour Graphite..."
-  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 config_collectd_grafana() {
   echo "Configuration de Collectd pour Graphana..."
-  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+  /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 config_collectd_nagios() {
   echo "Configuration de Collectd pour Nagios..."
-  sudo /bin/bash src/collectd_nagios.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+  sudo /bin/bash src/collectd_nagios.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 config_collectd_zabbix() {
   echo "Configuration de Collectd pour Zabbix..."
-  sudo /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $STEP > /dev/null #2>&1 &
+  sudo /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 # Création du répertoire de destination du tir
@@ -186,7 +187,7 @@ done
 echo "Démarrage du benchmark pour $nb_total_sec seconds..."
 
 for tool in $BENCHED_TOOLS; do
-  bench_tool $tool 2>&1 &
+  bench_tool $tool #2>&1 &
 done
 
 bench_empty
