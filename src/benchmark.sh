@@ -8,14 +8,14 @@ STEP=1 # sec                            # Pas de temps pour la collecte de donn�
 INTERVAL=1 # sec                        # Intervalle de temps pour la config de collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
-BENCHED_TOOLS="zabbix grafana nagios" # Liste des outils de monitoring à benchmarker
+BENCHED_TOOLS="nagios zabbix grafana" # Liste des outils de monitoring à benchmarker zabbix grafana nagios
 # Analyse des options de ligne de commande
 if [ -n "$1" ]; then
   DURATION=$1
 fi
 
-TIME_BEFORE=5 # sec
-TIME_AFTER=5 # sec
+TIME_BEFORE=0 # sec
+TIME_AFTER=0 # sec
 
 nb_sec_collect=$(($DURATION + $TIME_BEFORE + $TIME_AFTER))
 nb_total_sec=$nb_sec_collect
@@ -44,12 +44,12 @@ config_collectd_grafana() {
 
 config_collectd_nagios() {
   echo "Configuration de Collectd pour Nagios..."
-  sudo /bin/bash src/collectd_nagios.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
+  /bin/bash src/collectd_nagios.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 config_collectd_zabbix() {
   echo "Configuration de Collectd pour Zabbix..."
-  sudo /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
+  /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 # Création du répertoire de destination du tir
@@ -69,7 +69,7 @@ create_dir() {
 stop_collectd() {
   if pgrep -x "collectd" > /dev/null; then
     echo "Une instance de Collectd tourne déjà. Arrêt en cours..."
-    sudo kill $(pgrep -x "collectd")
+    kill $(pgrep -x "collectd")
     echo "Arrêt de Collectd"
   fi
 }
@@ -80,7 +80,7 @@ start_collectd() {
 }
 
 start_graphite() {
-  start_collectd
+  start_collectd graphite
   sleep 1
   echo "Démarage Graphite..."
   docker start graphite
@@ -168,6 +168,39 @@ bench_tool() {
   echo "Benchmark $1 terminé."
 }
 
+purge_zabbix() {
+  start_zabbix > /dev/null 
+  echo "Purge de la base de données Zabbix..."
+  sudo docker exec -i zabbix-docker-mysql-server-1 mysql -u zabbix -pzabbix zabbix <<EOF
+  TRUNCATE TABLE history;
+  TRUNCATE TABLE history_log;
+  TRUNCATE TABLE history_str;
+  TRUNCATE TABLE history_uint;
+  TRUNCATE TABLE history_text;
+  TRUNCATE TABLE trends;
+  TRUNCATE TABLE trends_uint;
+EOF
+  stop_zabbix > /dev/null
+}
+
+purge_nagios() {
+  echo "Purge de la base de données Nagios..."
+  docker stop nagios4
+  sudo rm -rf $PWD/nagios/nagiosgraph/var/*
+}
+
+purge_graphite() {
+  echo "Purge de la base de données Graphite..."
+  docker stop graphite 
+  sudo rm -rf $PWD/graphite/storage/whisper/*
+}
+
+purge_grafana() {
+  echo "Purge de la base de données Grafana..."
+  purge_graphite
+}
+
+
 # Main
 stop_collectd
 stop_grafana
@@ -182,6 +215,7 @@ create_dir
 
 for tool in $BENCHED_TOOLS; do
   "config_collectd_$tool"
+  "purge_$tool"
 done
 
 echo "Démarrage du benchmark pour $nb_total_sec seconds..."
