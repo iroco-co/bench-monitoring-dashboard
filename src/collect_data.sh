@@ -39,10 +39,14 @@ cleanup() {
 }
 
 create_dir() {
-  if [ -d ${DESTINATION} ]; then
-    echo "Le répertoire ${DESTINATION} existe déjà. Suppression en cours..."
-    cleanup
-  fi
+  local NEW_DESTINATION=${DESTINATION}
+  local cpt=2
+  while [ -d ${NEW_DESTINATION} ]; do
+    echo "Le répertoire ${NEW_DESTINATION} existe déjà."
+    NEW_DESTINATION=${DESTINATION}_${cpt}
+    cpt=$((cpt + 1))
+  done
+  DESTINATION=${NEW_DESTINATION}
   echo "Création du répertoire $DESTINATION"
   mkdir -p ${DESTINATION}
 }
