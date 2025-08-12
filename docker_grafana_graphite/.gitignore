@@ -1,0 +1,8 @@
+/graphite/conf/*
+/graphite/storage/*
+!/graphite/storage/graphite.db
+!/graphite/conf/storage-schemas.conf
+
+/grafana/conf/*
+/grafana/data/*
+!/grafana/data/grafana.db

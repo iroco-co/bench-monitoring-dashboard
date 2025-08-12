@@ -8,7 +8,7 @@ STEP=1 # sec                            # Pas de temps pour la collecte de donn�
 INTERVAL=1 # sec                        # Intervalle de temps pour la config de collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
-BENCHED_TOOLS="nagios zabbix grafana" # Liste des outils de monitoring à benchmarker zabbix grafana nagios
+BENCHED_TOOLS="nagios zabbix grafana_graphite graphite" # Liste des outils de monitoring à benchmarker zabbix grafana_graphite nagios
 # Analyse des options de ligne de commande
 if [ -n "$1" ]; then
   DURATION=$1
@@ -37,7 +37,7 @@ config_collectd_graphite() {
   /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
-config_collectd_grafana() {
+config_collectd_grafana_graphite() {
   echo "Configuration de Collectd pour Graphana..."
   /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
@@ -86,11 +86,11 @@ start_graphite() {
   docker start graphite
 }
 
-start_grafana() {
+start_grafana_graphite() {
   start_collectd graphite
   sleep 1
-  echo "Démarage grafana..."
-  docker compose --project-name 'bench-monitoring-dashboard' start
+  echo "Démarage grafana_graphite..."
+  docker compose --project-name 'docker_grafana_graphite' start
 }
 
 start_nagios() {
@@ -116,10 +116,10 @@ stop_graphite() {
   echo "Arrêt de Graphite..."
 }
 
-stop_grafana() {
-  docker compose --project-name 'bench-monitoring-dashboard' stop
+stop_grafana_graphite() {
+  docker compose --project-name 'docker_grafana_graphite' stop
   stop_collectd
-  echo "Arrêt de grafana..."
+  echo "Arrêt de grafana_graphite..."
 }
 
 stop_nagios() {
@@ -195,15 +195,15 @@ purge_graphite() {
   sudo rm -rf $PWD/graphite/storage/whisper/*
 }
 
-purge_grafana() {
-  echo "Purge de la base de données Grafana..."
+purge_grafana_graphite() {
+  echo "Purge de la base de données Grafana_graphite..."
   purge_graphite
 }
 
 
 # Main
 stop_collectd
-stop_grafana
+stop_grafana_graphite
 stop_graphite
 stop_nagios
 stop_zabbix
