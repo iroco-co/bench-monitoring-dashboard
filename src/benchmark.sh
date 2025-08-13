@@ -5,19 +5,16 @@ BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s) # Date de base pour la collecte d
 # Initialisation des variables
 DURATION=10 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
 STEP=1 # sec                            # Pas de temps pour la collecte de données
-INTERVAL=1 # sec                        # Intervalle de temps pour la config de collectd
+INTERVAL=5 # sec                        # Intervalle de temps pour la config de collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
-BENCHED_TOOLS="nagios zabbix grafana_graphite graphite" # Liste des outils de monitoring à benchmarker zabbix grafana_graphite nagios
+BENCHED_TOOLS="grafana_graphite grafana_influxdb nagios zabbix" # Liste des outils de monitoring à benchmarker nagios zabbix grafana_graphite graphite grafana_influxdb
 # Analyse des options de ligne de commande
 if [ -n "$1" ]; then
   DURATION=$1
 fi
 
-TIME_BEFORE=0 # sec
-TIME_AFTER=0 # sec
-
-nb_sec_collect=$(($DURATION + $TIME_BEFORE + $TIME_AFTER))
+nb_sec_collect=$(($DURATION))
 nb_total_sec=$nb_sec_collect
 
 DESTINATION=$PWD/tir_     # Répertoire de destination du tir de benchmark
@@ -38,7 +35,7 @@ config_collectd_graphite() {
 }
 
 config_collectd_grafana_graphite() {
-  echo "Configuration de Collectd pour Graphana..."
+  echo "Configuration de Collectd pour Graphana_graphite..."
   /bin/bash src/collectd_graphite.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
@@ -50,6 +47,11 @@ config_collectd_nagios() {
 config_collectd_zabbix() {
   echo "Configuration de Collectd pour Zabbix..."
   /bin/bash src/collectd_zabbix.sh --network-interface $NETWORK_INTERFACE --time-interval $INTERVAL > /dev/null #2>&1 &
+}
+
+config_collectd_grafana_influxdb() {
+  echo "Configuration de Collectd pour Graphana_influxdb..."
+  /bin/bash src/collectd_influxdb.sh --time-interval $INTERVAL > /dev/null #2>&1 &
 }
 
 # Création du répertoire de destination du tir
@@ -107,6 +109,13 @@ start_zabbix() {
   docker compose --project-name 'zabbix-docker' start 
 }
 
+start_grafana_influxdb() {
+  start_collectd influxdb
+  sleep 1
+  echo "Démarage grafana_influxdb..."
+  docker compose --project-name 'docker_grafana_influxdb' start
+}
+
 stop_graphite() {
   if docker ps -q --filter "name=graphite" > /dev/null; then
     echo "Arrêt de Graphite..."
@@ -137,6 +146,12 @@ stop_zabbix() {
   echo "Arrêt de zabbix..."
 }
 
+stop_grafana_influxdb() {
+  docker compose --project-name 'docker_grafana_influxdb' stop
+  stop_collectd
+  echo "Arrêt de grafana_influxdb..."
+}
+
 start_collect_data() {
   echo "Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
   exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect --step $STEP $DESTINATION/$1 > /dev/null 2>&1 &
@@ -151,20 +166,18 @@ generate_graphs() {
 bench_empty() {
   echo "Benchmark à vide en cours..."
   start_collect_data empty
-  sleep $TIME_BEFORE
   sleep $DURATION
-  sleep $TIME_AFTER
   echo "Benchmark à vide terminé."
 }
 
 bench_tool() {
   echo "Benchmark $1 en cours..."
-  start_collect_data $1
-  sleep $TIME_BEFORE
   "start_$1"
+  sleep 5
+  start_collect_data $1
   sleep $DURATION
+  sleep 1
   "stop_$1"
-  sleep $TIME_AFTER
   echo "Benchmark $1 terminé."
 }
 
@@ -197,9 +210,15 @@ purge_graphite() {
 
 purge_grafana_graphite() {
   echo "Purge de la base de données Grafana_graphite..."
-  purge_graphite
+  docker stop graphite_grafana 
+  sudo rm -rf $PWD/docker_grafana_graphite/graphite/storage/whisper/*
 }
 
+purge_grafana_influxdb() {
+  echo "Purge de la base de données Grafana_graphite..."
+  docker stop graphite_grafana 
+  sudo rm -rf $PWD/docker_grafana_influxdb/influxdb/data/*
+}
 
 # Main
 stop_collectd
@@ -207,6 +226,7 @@ stop_grafana_graphite
 stop_graphite
 stop_nagios
 stop_zabbix
+stop_grafana_influxdb
 
 cleanup
 

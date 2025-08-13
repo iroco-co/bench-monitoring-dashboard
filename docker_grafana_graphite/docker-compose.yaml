@@ -2,7 +2,7 @@ version: '3'
 
 services:
   graphite:
-    container_name: graphite
+    container_name: graphite_grafana
     image: graphiteapp/graphite-statsd
     ports:
       - "81:80"
@@ -16,7 +16,7 @@ services:
       - grafana_graphite
 
   grafana:
-    container_name: grafana
+    container_name: grafana_graphite
     depends_on:
       - graphite
     image: grafana/grafana-oss

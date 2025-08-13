@@ -74,7 +74,7 @@ LoadPlugin write_log
   Server "127.0.0.1" "25827"
 </Plugin>
 EOL
+
+timeout 1 collectd -C $collectd_conf -f > /dev/null 2>&1
 echo "✅ Configuration Collectd générée :"
 cat $collectd_conf
-collectd -C $collectd_conf -f
-
