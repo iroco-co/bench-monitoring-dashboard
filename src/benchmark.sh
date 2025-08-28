@@ -5,10 +5,10 @@ BASE_TIME=$(date -d "2025-03-12 00:00:00" +%s) # Date de base pour la collecte d
 # Initialisation des variables
 DURATION=10 # sec                       # Echantillon de temps pour l'utilisation de l'outil de monitoring
 STEP=1 # sec                            # Pas de temps pour la collecte de données
-INTERVAL=5 # sec                        # Intervalle de temps pour la config de collectd
+INTERVAL=1 # sec                        # Intervalle de temps pour la config de collectd
 CONFIG_DIR=./config                     # Répertoire de configuration de l'outil de monitoring
 NETWORK_INTERFACE=wlp2s0                # Interface réseau à surveiller
-BENCHED_TOOLS="grafana_graphite grafana_influxdb nagios zabbix" # Liste des outils de monitoring à benchmarker nagios zabbix grafana_graphite graphite grafana_influxdb
+BENCHED_TOOLS="zabbix" # Liste des outils de monitoring à benchmarker nagios zabbix grafana_graphite graphite grafana_influxdb
 # Analyse des options de ligne de commande
 if [ -n "$1" ]; then
   DURATION=$1
@@ -153,8 +153,8 @@ stop_grafana_influxdb() {
 }
 
 start_collect_data() {
-  echo "Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
-  exec ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect --step $STEP $DESTINATION/$1 > /dev/null 2>&1 &
+  echo "$(date +%Y-%m-%d_%H-%M-%S) Démarrage de la collecte de données pour $1... durée: $nb_sec_collect secondes"
+  ./src/collect_data.sh --base-time $BASE_TIME --nb-seconds $nb_sec_collect --step $STEP $DESTINATION/$1 > /dev/null 2>&1
 }
 
 generate_graphs() {
@@ -175,8 +175,7 @@ bench_tool() {
   "start_$1"
   sleep 5
   start_collect_data $1
-  sleep $DURATION
-  sleep 1
+  sleep 5
   "stop_$1"
   echo "Benchmark $1 terminé."
 }
