@@ -1,5 +1,0 @@
-/grafana/conf/*
-/grafana/data/*
-!/grafana/data/grafana.db
-
-/influxdb/data/*

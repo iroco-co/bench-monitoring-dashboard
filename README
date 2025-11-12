@@ -1,181 +1,23 @@
-# Introduction
-Le but de ce projet est de tester plusieurs outils de visualisation de données. Pour cela, nous avons choisi de tester les outils suivants :
-- **Graphite**
-- **Nagios**
-- **Zabbix**
+# iroco.co
 
-Nous nous sommes inspirés du comparatif suivant: https://betterstack.com/community/comparisons/nagios-alternative/
+The site has moved [here](https://codeberg.org/iroco/bench-monitoring-dashboard).
 
-# Graphite
+---
+As an organization that values the building of digital commons, we do not want to participate to the OpenAI/Microsoft LLM model development. 
 
-## Installation
-Documentation:
-https://graphite.readthedocs.io/en/latest/install-source.html
+1. We believe that this model is harmful to [human cognition](https://www.bloomberg.com/news/articles/2025-08-12/ai-eroded-doctors-ability-to-spot-cancer-within-months-in-study), [data privacy](https://jskfellows.stanford.edu/theft-is-not-fair-use-474e11f0d063), the [environment](https://iea.blob.core.windows.net/assets/ed0483fd-aab4-4cf9-b25a-5aa362b56a2f/EnergyandAI.pdf) (Copilot consumes [20.8W of power with 90% loss](https://arxiv.org/abs/2411.11892)), [misinformation](https://www.technologyreview.com/2023/10/04/1080801/generative-ai-boosting-disinformation-and-propaganda-freedom-house/), and all its biases: [colonialism](https://karendhao.com/), [racism](https://www.npr.org/2025/07/09/nx-s1-5462609/grok-elon-musk-antisemitic-racist-content), [sexism](https://www.unwomen.org/en/news-stories/interview/2025/02/how-ai-reinforces-gender-bias-and-what-we-can-do-about-it). We are not against AI, we are against the way AI is implemented with Copilot by GitHub and ultimately Microsoft and OpenAI. We use it (for example for translations) sparingly and conscientiously.
 
-### Docker
-https://github.com/graphite-project/docker-graphite-statsd
-```bash
-docker run -d \
- --name graphite \
- --restart=always \
- -v $PWD/graphite/storage:/opt/graphite/storage \
- -v $PWD/graphite/conf:/opt/graphite/conf \
- -p 80:80 \
- -p 2003-2004:2003-2004 \
- -p 2023-2024:2023-2024 \
- -p 8125:8125/udp \
- -p 8126:8126 \
- graphiteapp/graphite-statsd
-```
-username: root
-password: root
-# Zabbix web service
+2. We do not want to contribute to the [techno-authoritarian stack](https://www.authoritarian-stack.info/) that is developing in the United States. We disapprove of Microsoft's involvement in the [hydrocarbon extraction companies](https://www.woodmac.com/horizons/ai-powered-analysis-oil-field-potential/). We don't understand the [version management policy](https://blog.iroco.co/windows10-the-end/) for Windows 10. Last but not least, we wish to maintain sovereignty over our IT stack.
 
-## Installation
-Documentation:
-https://hub.docker.com/r/zabbix/zabbix-web-service
+Long version is [here](https://blog.iroco.co/pourquoi-quitter-github/).
 
-### Docker 
-#### pgsql
-Configuration de l'utilisateur et de la db dans postgres.
-Executer dans le container postgres:
-```bash
-su - postgres -c "createuser --pwprompt zabbix"
-su - postgres -c "createdb -O zabbix -E Unicode -T template0 zabbix"
-```
+---
+Version Française
 
-#### Zabbix server (pgsql)
-https://hub.docker.com/r/zabbix/zabbix-server-pgsql
-```bash
-docker run --name some-zabbix-server-pgsql -e DB_SERVER_HOST="some-postgres-server" -e POSTGRES_USER="some-user" -e POSTGRES_PASSWORD="some-password" --init -d zabbix/zabbix-server-pgsql:tag
-```
-Where `some-zabbix-server-pgsql` is the name you want to assign to your container, `some-postgres-server` is IP or DNS name of PostgreSQL server, `some-user` is user to connect to Zabbix database on PostgreSQL server, `some-password` is the password to connect to PostgreSQL server and tag is the tag specifying the version you want. See the list above for relevant tags, or look at [the full list of tags](https://hub.docker.com/r/zabbix/zabbix-server-pgsql/tags/).
+En tant qu'organisation qui valorise la construction de communs numériques, nous ne souhaitons pas alimenter les modèles LLM OpenAI/Microsoft. 
 
-quick start:
-```bash
-docker run --name zabbix-server-pgsql --network=irocoenv_default -e DB_SERVER_HOST="irocoenv_postgresql_1" -e POSTGRES_USER="zabbix" -e POSTGRES_PASSWORD="zabbix" --init -d zabbix/zabbix-server-pgsql:latest
-```
+1. Nous pensons l'IA générative est délétère, pour la [cognition humaine](https://www.bloomberg.com/news/articles/2025-08-12/ai-eroded-doctors-ability-to-spot-cancer-within-months-in-study), le [respect des données](https://jskfellows.stanford.edu/theft-is-not-fair-use-474e11f0d063), l'[environnement](https://iea.blob.core.windows.net/assets/ed0483fd-aab4-4cf9-b25a-5aa362b56a2f/EnergyandAI.pdf) (l'utilisation de copilot représente une puissance de [20,8W avec 90% de perte](https://arxiv.org/abs/2411.11892)), la [désinformation](https://www.technologyreview.com/2023/10/04/1080801/generative-ai-boosting-disinformation-and-propaganda-freedom-house/), et tous ses biais : le [colonialisme](https://karendhao.com/), le [racisme](https://www.npr.org/2025/07/09/nx-s1-5462609/grok-elon-musk-antisemitic-racist-content), le [sexisme](https://www.unwomen.org/en/news-stories/interview/2025/02/how-ai-reinforces-gender-bias-and-what-we-can-do-about-it). Nous ne sommes pas contre l'IA en tant que telle, nous sommes contre la manière dont l'IA est mise en oeuvre avec Copilot par GitHub  et finalement Microsoft et OpenAI.
 
-#### Zabbix frontend (nginx, pgsql)
-https://hub.docker.com/r/zabbix/zabbix-web-nginx-pgsql
-```bash
-docker run --name some-zabbix-web-nginx-pgsql -e DB_SERVER_HOST="some-postgres-server" -e POSTGRES_USER="some-user" -e POSTGRES_PASSWORD="some-password" -e ZBX_SERVER_HOST="some-zabbix-server" -e PHP_TZ="some-timezone" -d zabbix/zabbix-web-nginx-pgsql:tag
-```
-Where `some-zabbix-web-nginx-pgsql` is the name you want to assign to your container, `some-postgres-server` is IP or DNS name of PostgreSQL server, `some-user` is user to connect to Zabbix database on PostgreSQL server, `some-password` is the password to connect to PostgreSQL server, `some-zabbix-server` is IP or DNS name of Zabbix server and `some-timezone` is the timezone you want. See the list above for relevant tags, or look at [the full list of tags](https://hub.docker.com/r/zabbix/zabbix-web-nginx-pgsql/tags/).
+2. Nous ne voulons pas alimenter l'[écosystème techno-autoritaire](https://www.authoritarian-stack.info/) qui se met en place aux Etats-Unis. Nous réprouvons l'[aide aux sociétés extractives](https://www.woodmac.com/horizons/ai-powered-analysis-oil-field-potential/) d'hydrocarbures. Nous ne comprenons pas la politique de gestion de [version de Windows 10](https://blog.iroco.co/windows10-the-end/). Surtout, nous souhaitons conserver la souveraineté sur notre environnement informatique.
 
-quick start:
-```bash
-docker run --name zabbix-web-nginx-pgsql --network=irocoenv_default -e DB_SERVER_HOST="irocoenv_postgresql_1" -e POSTGRES_USER="zabbix" -e POSTGRES_PASSWORD="zabbix" -e ZBX_SERVER_HOST="zabbix-server-pgsql" -e PHP_TZ="Europe/Paris" -p 8080:8080 -d zabbix/zabbix-web-nginx-pgsql:latest 
-```
-
-username: Admin
-password: zabbix
-
-
-# Nagios
-## Installation
-### Docker
-https://hub.docker.com/r/jasonrivers/nagios
-```bash
-docker run --name nagios4 -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
-```
-
-```bash
-  sudo rm -rf $PWD/nagios/nagios/etc/*
-  sudo rm -rf $PWD/nagios/Custom-Nagios-Plugins/*
-  sudo rm -rf $PWD/nagios/nagiosgraph/var/*
-  sudo rm -rf $PWD/nagios/nagiosgraph/etc/*
-```
-
-```bash
-docker run --name nagios4  \
-  -v /tmp/collectd-unixsock.sock:/opt/collectd/var/run/collectd-unixsock.sock \
-  -v $PWD/nagios/nagios/etc/:/opt/nagios/etc/ \
-  -v $PWD/nagios/Custom-Nagios-Plugins:/opt/Custom-Nagios-Plugins \
-  -v $PWD/nagios/nagiosgraph/var:/opt/nagiosgraph/var \
-  -v $PWD/nagios/nagiosgraph/etc:/opt/nagiosgraph/etc \
-  -p 0.0.0.0:8081:80 jasonrivers/nagios:latest
-```
-
-username: nagiosadmin
-password: nagios
-
-### Collectd-nagios
-https://www.collectd.org/documentation/manpages/collectd-nagios.html
-
-
-```bash
-sudo apt -y install --no-install-recommends collectd-utils  
-```
-
-```bash
-sudo apt update && sudo apt install socat -y
-```
-
-```bash
-docker start nagios4
-docker exec -it nagios4 sh
-```
-
-récupérer les variables:
-```bash
-echo "LISTVAL" | socat - UNIX-CONNECT:/tmp/collectd-unixsock.sock  
-```
-```bash
-echo "LISTVAL" | socat - UNIX-CONNECT:/opt/collectd/var/run/collectd-unixsock.sock
-```
-```bash
-/usr/bin/collectd-nagios -s /tmp/collectd-unixsock.sock -n memory/percent-used  -H arthurb-Latitude-7490 -w 1 -c 5 -g none 
-```
-
-nagios/etc/commands.cfg
-```conf
-define command{
-        command_name    check_collectd
-        command_line    /usr/bin/collectd-nagios -s /opt/collectd/var/run/collectd-unixsock.sock -n cpu/percent-idle -H arthurb-Latitude-7490 -g none
-        }
-```
-nagios/etc/localhost.cfg
-```conf
-define service{
-        use                             local-service,graphed-service          ; Name of service template to use
-        host_name                       localhost
-        service_description             Collectd Load
-        check_command                   check_collectd
-        check_interval                 1
-        }
-```
-Donc en gros comment ça fonctionne?
-1. collectd ouvre une socket unix avec le plugin. 
-2. Le service Nagios execute la commande qui utilise l'utilistaire collectd-nagios (il faut insaller collectd-nagios sur le docker nagios).
-3. collectd-nagios se connecte à la socket unix et demande la valeur de la métrique passée en paramettre de la commande.
-4. collectd-nagios renvoie la valeur à nagios qui l'affiche dans l'interface web.
-
-# Purges:
-
-## Graphite
-```bash
-docker stop graphite 
-sudo rm -rf $PWD/graphite/storage/whisper/*
-```
-
-## Zabbix
-```bash
-docker start zabbix-docker-mysql-server-1
-docker exec -i zabbix-docker-mysql-server-1 mysql -u zabbix -pzabbix zabbix <<EOF
-TRUNCATE TABLE history;
-TRUNCATE TABLE history_log;
-TRUNCATE TABLE history_str;
-TRUNCATE TABLE history_uint;
-TRUNCATE TABLE history_text;
-TRUNCATE TABLE trends;
-TRUNCATE TABLE trends_uint;
-EOF
-docker stop zabbix-docker-mysql-server-1
-```
-
-## Nagios
-```bash
-docker stop nagios4
-sudo rm -rf $PWD/nagios/nagiosgraph/var/*
-```
+La version longue est [ici](https://blog.iroco.co/pourquoi-quitter-github/).
